@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI.M Score Diagnostic — VIRO — by Puissance AI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+:root {
+    --pai-blue: #0068FF;
+    --pai-dark: #171B20;
+    --pai-light: #EBEFF6;
+    --green: #22C55E;
+    --orange: #F59E0B;
+    --red: #EF4444;
+    --yellow: #FBBF24;
+    --teal: #0d7377;
+    --gold: #c8a951;
+    --navy: #1A3A5A;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',Arial,sans-serif; color:var(--pai-dark); background:#fff; line-height:1.6; }
+
+/* NAV */
+.nav { position:sticky; top:0; z-index:100; background:var(--pai-dark); padding:12px 32px; display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+.nav a { color:var(--pai-light); text-decoration:none; font-size:13px; font-weight:500; opacity:0.8; transition:opacity 0.2s; white-space:nowrap; }
+.nav a:hover { opacity:1; }
+.nav .brand { font-weight:700; font-size:16px; color:#fff; opacity:1; margin-right:auto; }
+
+/* SECTIONS */
+section { padding:64px 32px; max-width:1100px; margin:0 auto; }
+section:nth-child(even of section) { background:var(--pai-light); max-width:100%; }
+section:nth-child(even of section) > .inner { max-width:1100px; margin:0 auto; }
+h2 { font-size:28px; font-weight:700; margin-bottom:8px; color:var(--pai-dark); }
+h2 .num { color:var(--pai-blue); }
+.subtitle { color:#666; font-size:15px; margin-bottom:32px; }
+
+/* HERO */
+.hero { background:linear-gradient(135deg, var(--pai-dark) 0%, #1e293b 100%); color:var(--pai-light); padding:80px 32px 64px; text-align:center; }
+.hero h1 { font-size:36px; font-weight:700; margin-bottom:8px; }
+.hero .company { font-size:48px; font-weight:700; color:var(--pai-blue); margin-bottom:24px; }
+.hero .meta { display:flex; justify-content:center; gap:40px; flex-wrap:wrap; margin-top:24px; }
+.hero .meta-item { text-align:center; }
+.hero .meta-item .val { font-size:24px; font-weight:700; }
+.hero .meta-item .lbl { font-size:13px; opacity:0.7; }
+
+/* AIM GAUGE */
+.aim-gauge { text-align:center; margin:40px 0; position:relative; }
+.aim-gauge .score { font-size:72px; font-weight:700; line-height:1; }
+.aim-gauge .label { font-size:16px; color:#666; margin-top:8px; position:relative; display:inline-block; }
+.aim-bar { width:100%; max-width:500px; height:12px; background:linear-gradient(to right, var(--red), var(--orange), var(--green)); border-radius:6px; margin:16px auto; position:relative; }
+.aim-bar .marker { position:absolute; top:-6px; width:4px; height:24px; background:var(--pai-dark); border-radius:2px; transform:translateX(-50%); }
+
+/* CARDS GRID */
+.cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin:24px 0; }
+.card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.08); position:relative; }
+.card .val { font-size:28px; font-weight:700; }
+.card .sub-val { font-size:16px; font-weight:500; color:#555; }
+.card .lbl { font-size:13px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px; }
+.card .comment { font-size:12px; color:#888; margin-top:8px; line-height:1.4; }
+.card.ok { border-left:4px solid var(--green); }
+.card.warn { border-left:4px solid var(--orange); }
+.card.alert { border-left:4px solid var(--red); }
+
+/* TOOLTIP — Refonte complète */
+.tt { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--teal); color:#fff; font-size:11px; font-weight:700; cursor:pointer; position:absolute; top:12px; right:12px; z-index:10; user-select:none; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.tt.inline { position:relative; top:auto; right:auto; margin-left:6px; vertical-align:middle; }
+.tt-pop {
+    display:none; position:fixed; background:#fff; border:1px solid #ddd;
+    border-radius:10px; padding:16px 18px; max-width:min(340px, calc(100vw - 16px)); width:max-content;
+    box-shadow:0 8px 24px rgba(0,0,0,0.18); z-index:9999; font-size:12px;
+    line-height:1.6; opacity:0; transition:opacity 0.15s ease;
+    pointer-events:auto; word-break:break-word;
+}
+.tt-pop.show { display:block; opacity:1; }
+.tt-pop strong { color:var(--teal); }
+
+/* DONUT */
+.donut-container { display:flex; align-items:center; justify-content:center; gap:40px; flex-wrap:wrap; margin:32px 0; }
+.donut-legend { display:flex; flex-direction:column; gap:12px; }
+.donut-legend .item { display:flex; align-items:center; gap:8px; font-size:14px; }
+.donut-legend .dot { width:14px; height:14px; border-radius:50%; }
+
+/* TABLE */
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { background:var(--pai-dark); color:#fff; padding:10px 12px; text-align:left; font-weight:500; position:sticky; top:0; }
+td { padding:8px 12px; border-bottom:1px solid #eee; }
+tr:hover td { background:#f8f9fa; }
+.cat-leader { color:var(--green); font-weight:700; }
+.cat-enthousiaste { color:var(--orange); font-weight:700; }
+.cat-mefiant { color:var(--red); font-weight:700; }
+
+/* FILTERS */
+.filter-bar { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+.filter-bar select { padding:8px 12px; border:1px solid #ccc; border-radius:6px; font-family:inherit; font-size:13px; background:#fff; cursor:pointer; }
+.filter-bar select:focus { border-color:var(--teal); outline:none; box-shadow:0 0 0 2px rgba(13,115,119,0.2); }
+.filter-count { font-size:13px; color:#666; margin-left:8px; }
+
+/* FILTER BUTTONS (Section 5) */
+.filter-buttons { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.filter-btn { padding:8px 16px; border:1px solid #ccc; border-radius:20px; background:#fff; font-family:inherit; font-size:13px; cursor:pointer; transition:all 0.2s; }
+.filter-btn:hover { border-color:var(--teal); }
+.filter-btn.active { background:var(--teal); color:#fff; border-color:var(--teal); }
+
+/* CATEGORY TAGS */
+.cat-tag { display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; letter-spacing:0.3px; }
+.cat-tag.x { background:#e0f2f1; color:var(--teal); }
+.cat-tag.y { background:#fff8e1; color:#8d6e00; }
+.cat-tag.z { background:#e3f2fd; color:var(--navy); }
+
+/* HEATMAP placeholder */
+.heatmap-container { margin:24px 0; }
+
+/* PLOTLY overrides */
+.js-plotly-plot .plotly .modebar { top:-35px !important; }
+.plotly-chart-container { margin-top:40px; position:relative; }
+
+/* INDICATOR CARDS */
+.ind-detail { font-size:12px; color:#666; margin-top:6px; }
+
+/* SIGNALS */
+.signal { border-radius:12px; padding:20px; margin:12px 0; }
+.signal.good { background:#f0fdf4; border-left:4px solid var(--green); }
+.signal.critique { background:#fef2f2; border-left:4px solid var(--red); }
+.signal.serieux { background:#fff7ed; border-left:4px solid var(--orange); }
+.signal.attention { background:#fffbeb; border-left:4px solid var(--yellow); }
+
+/* ORIENTATION */
+.orientation { background:var(--pai-blue); color:#fff; border-radius:16px; padding:32px; margin:32px 0; text-align:center; }
+.orientation h3 { font-size:20px; margin-bottom:12px; }
+.orientation p { font-size:16px; opacity:0.95; }
+
+/* VERBATIM */
+.verbatim-list { columns:2; column-gap:24px; }
+.verbatim-item { break-inside:avoid; background:#fff; border-radius:8px; padding:12px 16px; margin-bottom:12px; font-size:13px; border-left:3px solid var(--pai-blue); box-shadow:0 1px 2px rgba(0,0,0,0.05); }
+.verbatim-toggle { cursor:pointer; color:var(--teal); font-weight:600; font-size:14px; padding:12px 0; user-select:none; }
+.verbatim-toggle:hover { text-decoration:underline; }
+
+/* LLM ANALYSIS */
+.bloc-theme { background:#fff; border-radius:12px; padding:20px; margin:16px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08); position:relative; }
+.bloc-theme h4 { color:var(--pai-blue); font-size:16px; margin-bottom:8px; }
+.bloc-theme .keyword { font-size:13px; color:#666; font-style:italic; margin-bottom:8px; }
+.bloc-theme ul { padding-left:20px; font-size:13px; }
+.bloc-theme li { margin:4px 0; }
+
+.insight-box { background:linear-gradient(135deg, #1e1b4b, #312e81); color:#fff; border-radius:12px; padding:24px; margin:16px 0; }
+.insight-box h4 { color:var(--pai-blue); margin-bottom:8px; }
+.insight-box p { font-size:14px; line-height:1.6; }
+
+/* PRINT BUTTON */
+.print-btn { position:fixed; bottom:24px; right:24px; width:48px; height:48px; border-radius:50%; background:var(--teal); color:#fff; border:none; font-size:20px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:200; display:flex; align-items:center; justify-content:center; }
+.print-btn:hover { background:#0a5c5f; }
+
+/* FOOTER */
+footer { background:var(--pai-dark); color:var(--pai-light); padding:40px 32px; text-align:center; font-size:13px; }
+footer a { color:var(--pai-blue); }
+
+/* BAR CHARTS */
+.bar-chart { margin:24px 0; }
+.bar-row { display:flex; align-items:center; margin:6px 0; gap:12px; }
+.bar-label { width:200px; font-size:13px; text-align:right; }
+.bar-track-h { flex:1; height:28px; background:#e5e7eb; border-radius:4px; position:relative; overflow:visible; display:flex; align-items:center; }
+.bar-fill-h { height:100%; border-radius:4px; min-width:2px; display:flex; align-items:center; justify-content:flex-end; padding:0 8px; font-size:12px; font-weight:700; color:#fff; }
+.bar-n { font-size:11px; color:#999; margin-left:8px; white-space:nowrap; }
+
+@media (max-width:768px) {
+    .hero h1 { font-size:24px; }
+    .hero .company { font-size:32px; }
+    .cards { grid-template-columns:1fr; }
+    section { padding:32px 16px; }
+    .verbatim-list { columns:1; }
+    .bar-label { width:120px; font-size:12px; }
+    .filter-bar { flex-direction:column; }
+    .tt-pop { max-width:min(320px, 90vw); }
+}
+
+/* ============================================================
+   PRINT / PDF — Format paysage, plaquette commerciale
+   ============================================================ */
+@media print {
+    @page { size:landscape; margin:10mm 12mm; }
+    * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; box-shadow:none !important; animation:none !important; transition:none !important; }
+    body { font-size:11px; line-height:1.4; }
+    .nav { display:none !important; }
+    .print-btn { display:none !important; }
+    .modebar-container, .modebar, .js-plotly-plot .plotly .modebar { display:none !important; }
+    .filter-bar, .filter-buttons, .filter-count { display:none !important; }
+    .verbatim-toggle { display:none !important; }
+    #verbatimGrid { display:none !important; }
+    .tt { display:none !important; }
+    .tt-pop { display:none !important; }
+    section { padding:16px 12px; page-break-inside:auto; }
+    .hero { padding:30px 16px; page-break-after:always; }
+    .hero h1 { font-size:22px; margin-bottom:4px; }
+    .hero .company { font-size:28px; margin-bottom:8px; }
+    h2 { font-size:18px; margin-bottom:8px; }
+    h3 { font-size:15px; margin-bottom:6px; }
+    .card, .signal, .bloc-theme, .insight-box { page-break-inside:avoid; }
+    .card { padding:12px; margin-bottom:8px; }
+    .kpi-grid { display:grid !important; grid-template-columns:repeat(3,1fr) !important; gap:8px !important; }
+    table { page-break-inside:auto; font-size:10px; }
+    table th, table td { padding:4px 6px; }
+    tr { page-break-inside:avoid; }
+    .js-plotly-plot { break-inside:avoid; max-height:450px; }
+    .blocs-grid { display:grid !important; grid-template-columns:repeat(3,1fr) !important; gap:8px !important; }
+    .bloc-theme { padding:10px; font-size:10px; }
+    .bloc-theme h4 { font-size:12px; margin-bottom:4px; }
+    .bloc-theme ul { margin:4px 0; padding-left:16px; }
+    .bloc-theme li { margin-bottom:2px; }
+    .insight-box { padding:14px 16px; margin-bottom:10px; }
+    .signals-grid { display:grid !important; grid-template-columns:repeat(2,1fr) !important; gap:6px !important; }
+    .signal { padding:8px 10px; font-size:10px; }
+    footer { page-break-before:auto; padding:16px; margin-top:12px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+    <span class="brand">AI.M Score by Puissance<sup>AI</sup></span>
+    <a href="#s1">Context</a>
+    <a href="#s2">Snapshot</a>
+    <a href="#s3">Participants</a>
+    <a href="#s4">Indicators</a>
+    <a href="#s5">Verbatims</a>
+    <a href="#s6">Analysis</a>
+    <a href="#s7">Contact</a>
+</nav>
+
+<!-- SECTION 1 — HERO -->
+<div class="hero" id="s1">
+    
+    <h1>AI.M Score by Puissance<sup>AI</sup></h1>
+    <div class="company">VIRO</div>
+    <div class="meta">
+        <div class="meta-item"><div class="val">48</div><div class="lbl">respondents</div></div>
+        <div class="meta-item"><div class="val">48</div><div class="lbl">target headcount</div></div>
+        <div class="meta-item"><div class="val">100.0%</div><div class="lbl">participation</div></div>
+        <div class="meta-item"><div class="val">excellent</div><div class="lbl">representativeness</div></div>
+        <div class="meta-item"><div class="val">3</div><div class="lbl">anonymous</div></div>
+    </div>
+    <div class="aim-gauge">
+        <div class="score" style="color:#EF4444">-6.25</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px">on a scale from -100 to +100</div>
+        <div class="label">AI.M Score <span class="tt inline" data-tt-key="aim_score_formula">i</span></div>
+        <div class="aim-bar"><div class="marker" style="left:46.875%"></div></div>
+        <div style="display:flex;justify-content:space-between;max-width:500px;margin:0 auto;font-size:11px;color:rgba(255,255,255,0.5)"><span>-100</span><span>0</span><span>+100</span></div>
+    </div>
+    <div style="font-size:13px;opacity:0.6;margin-top:16px">
+        Period: 25/05/2026 &rarr; 28/08/2026
+    </div>
+</div>
+
+<!-- SECTION 2 — PHOTO -->
+<section id="s2">
+    <h2><span class="num">02</span> Snapshot of your organisation</h2>
+    <p class="subtitle">Segmentation of employees by their stance towards AI</p>
+
+    <div class="donut-container">
+        <canvas id="donutChart" width="260" height="260"></canvas>
+        <div class="donut-legend">
+            <div class="item"><div class="dot" style="background:var(--green)"></div> Leaders: 10 (20.83%)</div>
+            <div class="item"><div class="dot" style="background:var(--orange)"></div> Enthusiasts: 25 (52.08%)</div>
+            <div class="item"><div class="dot" style="background:var(--red)"></div> Cautious: 13 (27.08%)</div>
+        </div>
+    </div>
+
+    <div class="cards" id="capacityCards"></div>
+
+    <h3 style="margin:32px 0 16px;font-size:18px">AI.M Score by hierarchical level</h3>
+    <div class="bar-chart" id="barNiveau"></div>
+
+    <h3 style="margin:32px 0 16px;font-size:18px">AI.M Score by department</h3>
+    <div class="bar-chart" id="barDept"></div>
+</section>
+
+<!-- SECTION 3 — PARTICIPANTS -->
+<section id="s3" style="background:var(--pai-light)">
+    <div class="inner">
+        <h2><span class="num">03</span> List of participants</h2>
+        <p class="subtitle">Ranked by category, then by overall score in descending order (D1.Confidence + D2.Knowledge + D3.Appetite)</p>
+        <div class="filter-bar" id="participantFilters"></div>
+        <div class="filter-count" id="participantCount"></div>
+        <div style="overflow-x:auto">
+            <table id="participantsTable"></table>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 4 — INDICATEURS -->
+<section id="s4">
+    <h2><span class="num">04</span> Diagnostic indicators</h2>
+    <p class="subtitle">7 metrics to refine the analysis</p>
+
+    <h3 style="margin:24px 0 12px;font-size:18px">Fear heatmap <span class="tt inline" data-tt-key="heatmap_peur">i</span></h3>
+    <p style="font-size:13px;color:#666;margin-bottom:16px">Concentrated areas of caution (number of Cautious / number of respondents by hierarchical level and department) &mdash; hover over each cell for details.</p>
+    <div class="plotly-chart-container" id="heatmapPlotly"></div>
+
+    <h3 style="margin:32px 0 12px;font-size:18px">Indicator radar</h3>
+    <div class="plotly-chart-container" id="radarPlotly"></div>
+
+    <h3 style="margin:32px 0 12px;font-size:18px">Indicator details</h3>
+    <div class="cards" id="indicatorCards"></div>
+</section>
+
+<!-- SECTION 5 — VERBATIMS -->
+<section id="s5" style="background:var(--pai-light)">
+    <div class="inner">
+        <h2><span class="num">05</span> What your employees envision</h2>
+        <p class="subtitle">17 raw ideas expressed &rarr; <strong>16 unique projects</strong> after deduplication</p>
+
+        <div id="portfolioSection"></div>
+        <div id="llmFilterBar"></div>
+        <div id="llmSection"></div>
+
+        <div class="verbatim-toggle" id="verbatimToggle" onclick="toggleVerbatims()">&#9654; Show raw verbatims (17 verbatims)</div>
+        <div id="verbatimGrid" style="display:none">
+            <div class="verbatim-list" id="verbatimList"></div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 6 — ANALYSE -->
+<section id="s6">
+    <h2><span class="num">06</span> Analysis and direction</h2>
+    <p class="subtitle">Factual summary and recommendation</p>
+
+    <h3 style="margin:16px 0 12px;font-size:18px;color:var(--green)">&#x2705; Good news</h3>
+    <div id="bonnesNouvelles"></div>
+
+    <h3 style="margin:24px 0 12px;font-size:18px;color:var(--red)">&#x26A0;&#xFE0F; Challenges</h3>
+    <div id="defis"></div>
+
+    <div id="orientationBox"></div>
+</section>
+
+<!-- SECTION 7 — CONTACT -->
+<footer id="s7">
+    <div style="font-size:20px;font-weight:700;margin-bottom:12px">AI.M Score by Puissance<sup>AI</sup></div>
+    <p>5 rue Jean Montavont, 68200 Mulhouse</p>
+    <p><a href="https://www.puissance.ai/contact" target="_blank">https://www.puissance.ai/contact</a></p>
+    <p style="margin-top:24px;opacity:0.5;font-size:11px">Diagnostic carried out using the AI.M Score methodology — Puissance AI © 2026</p>
+    <p style="opacity:0.4;font-size:11px">This report is confidential. Individual data are processed anonymously.</p>
+</footer>
+
+<!-- PRINT BUTTON -->
+<button class="print-btn" onclick="window.print()" title="Print / Export PDF">&#128424;</button>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const tooltips = {"aim_score": {"label": "AI.M Score", "definition": "Overall AI maturity indicator of the organisation. It measures the gap between those ready to act (Leaders) and those holding back (Cautious).", "calcul": "% Leaders − % Cautious. Range: [-100, +100]", "ideal": "Above 0. The higher the score, the more ready the organisation is. A positive score means more Leaders than Cautious."}, "taux_participation": {"label": "Participation rate", "definition": "Share of the target headcount that answered the questionnaire.", "calcul": "Number of respondents ÷ Target headcount × 100", "ideal": "Above 60% for a reliable analysis."}, "representativite": {"label": "Representativeness", "definition": "Assessment of the reliability of results based on the participation rate.", "calcul": "Below 30% = low, 30-60% = fair, above 60% = excellent.", "ideal": "Excellent (above 60%)."}, "anonymes": {"label": "Anonymous", "definition": "Number of respondents who did not provide their identity. A high number may indicate a lack of trust.", "calcul": "Count of respondents without a surname or e-mail address.", "ideal": "As few as possible."}, "leaders": {"label": "Leaders", "definition": "Employees who perceive AI positively AND envision concrete projects. They are the drivers of the transformation.", "calcul": "Positive Willingness score (D1) AND positive Foresight score (D3).", "ideal": "At least 5 to form an AI Committee."}, "enthousiastes": {"label": "Enthusiasts", "definition": "Employees positive towards AI but who do not yet have project ideas.", "calcul": "Positive Willingness score (D1) AND zero or negative Foresight score (D3).", "ideal": "A pool to activate — with support, they become Leaders."}, "confiants": {"label": "Confident", "definition": "All employees who perceive AI positively. This is the support base.", "calcul": "Leaders + Enthusiasts (positive Willingness score D1).", "ideal": "At least 10 people and 25% of the headcount."}, "mefiants": {"label": "Cautious", "definition": "Employees who are not comfortable with AI.", "calcul": "Zero or negative Willingness score (D1).", "ideal": "As few as possible."}, "directeurs_bloquants": {"label": "Blocking directors", "definition": "Members of management who are not comfortable with AI. If too numerous, strategic blockage.", "calcul": "Management level (N1) AND zero or negative Willingness score (D1), relative to total N1.", "ideal": "Below 34%."}, "nb_projets": {"label": "Number of declared projects", "definition": "Total volume of AI project ideas expressed by employees.", "calcul": "Count of all non-empty verbatims in the project fields.", "ideal": "At least 20 ideas for a usable pool."}, "appetence": {"label": "Appetite (project holders)", "definition": "Share of employees with at least one AI project idea.", "calcul": "Number of respondents with at least 1 project ÷ Base × 100.", "ideal": "At least 25%."}, "heatmap_peur": {"label": "Fear heatmap", "definition": "Map of resistance to AI. Each cell crosses a hierarchical level and a department, and shows the % of Cautious.", "calcul": "% of non-confident respondents (D1 ≤ 0) for each Level × Department pair.", "ideal": "No red areas at Management or Manager level."}, "fracture_savoir": {"label": "Knowledge gap", "definition": "Measures the gap in AI skills between employees.", "calcul": "Standard deviation of Knowledge scores (D2).", "ideal": "Less than or equal to 15."}, "naivete": {"label": "Naivety rate", "definition": "Share of enthusiastic employees with ideas but without the skills.", "calcul": "Positive Willingness (D1) AND zero or negative Knowledge (D2) AND positive Foresight (D3).", "ideal": "Less than or equal to 30%."}, "dissonance": {"label": "Dissonance rate", "definition": "Share of employees whose answers are inconsistent with one another.", "calcul": "Dimensions normalised on [-2.5, +2.5]. Dissonant if gap > 1.2 between two dimensions.", "ideal": "Less than or equal to 30%."}, "remise_en_question": {"label": "Self-questioning capacity", "definition": "Among those with ideas, how many envision projects for their own job?", "calcul": "Respondents with a 'for oneself' project ÷ Respondents with at least 1 project × 100.", "ideal": "At least 70%."}, "engagement_collectif": {"label": "Collective engagement", "definition": "Among those with ideas, how many think of projects useful to the whole company?", "calcul": "Respondents with a 'for others' project ÷ Respondents with at least 1 project × 100.", "ideal": "At least 30%."}, "pct_consultants": {"label": "% Consultants", "definition": "Share of those who envision projects for others but not for themselves.", "calcul": "Project for others AND NOT for oneself ÷ With at least 1 project × 100.", "ideal": "Less than or equal to 30%."}, "densite_projection": {"label": "Projection density", "definition": "Ratio between unique projects and the target headcount. Indicates the real diversity of ideas.", "calcul": "Deduplicated projects ÷ Target headcount × 100.", "ideal": "At least 25%."}, "entonnoir_xyz": {"label": "Strategic funnel X/Y/Z", "definition": "Breakdown of projects along three axes: X = Customer Relations, Y = Productivity, Z = R&D.", "calcul": "Classification of each deduplicated project into one of the 3 axes.", "ideal": "All axes represented."}};
+const aimParNiveau = [{"code": "N1", "label": "Management / Strategic lead", "nb_repondants": 1, "nb_leaders": 1, "nb_mefiants": 0, "aim_score": 100.0}, {"code": "N2", "label": "Manager", "nb_repondants": 13, "nb_leaders": 4, "nb_mefiants": 1, "aim_score": 23.08}, {"code": "N3", "label": "Employee / Technician", "nb_repondants": 34, "nb_leaders": 5, "nb_mefiants": 12, "aim_score": -20.58}];
+const aimParDept = [{"code": "P1", "label": "General Management", "nb_repondants": 1, "aim_score": 100.0}, {"code": "P2", "label": "Customer Relations", "nb_repondants": 15, "aim_score": 6.66}, {"code": "P3", "label": "Production, HR, Logistics", "nb_repondants": 23, "aim_score": -17.39}, {"code": "P4", "label": "Accounting, Administration", "nb_repondants": 4, "aim_score": -25.0}, {"code": "P5", "label": "R&D, Innovation", "nb_repondants": 5, "aim_score": 0.0}];
+const heatmapData = [{"departement": "P2", "niveau": "N1", "pct_non_confiants": 0.0, "nb_repondants": 0, "nb_mefiants": 0}, {"departement": "P3", "niveau": "N1", "pct_non_confiants": 0.0, "nb_repondants": 0, "nb_mefiants": 0}, {"departement": "P4", "niveau": "N1", "pct_non_confiants": 0.0, "nb_repondants": 0, "nb_mefiants": 0}, {"departement": "P5", "niveau": "N1", "pct_non_confiants": 0.0, "nb_repondants": 0, "nb_mefiants": 0}, {"departement": "P1", "niveau": "N1", "pct_non_confiants": 0.0, "nb_repondants": 1, "nb_mefiants": 0}, {"departement": "P2", "niveau": "N2", "pct_non_confiants": 0.0, "nb_repondants": 6, "nb_mefiants": 0}, {"departement": "P3", "niveau": "N2", "pct_non_confiants": 0.0, "nb_repondants": 4, "nb_mefiants": 0}, {"departement": "P4", "niveau": "N2", "pct_non_confiants": 0.0, "nb_repondants": 2, "nb_mefiants": 0}, {"departement": "P5", "niveau": "N2", "pct_non_confiants": 100.0, "nb_repondants": 1, "nb_mefiants": 1}, {"departement": "P1", "niveau": "N2", "pct_non_confiants": 0.0, "nb_repondants": 0, "nb_mefiants": 0}, {"departement": "P2", "niveau": "N3", "pct_non_confiants": 44.44, "nb_repondants": 9, "nb_mefiants": 4}, {"departement": "P3", "niveau": "N3", "pct_non_confiants": 31.58, "nb_repondants": 19, "nb_mefiants": 6}, {"departement": "P4", "niveau": "N3", "pct_non_confiants": 50.0, "nb_repondants": 2, "nb_mefiants": 1}, {"departement": "P5", "niveau": "N3", "pct_non_confiants": 25.0, "nb_repondants": 4, "nb_mefiants": 1}, {"departement": "P1", "niveau": "N3", "pct_non_confiants": 0.0, "nb_repondants": 0, "nb_mefiants": 0}];
+const participants = [{"prenom_nom": "Luca Francesco Fabbri", "fonction": "Product Manager", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Manager", "niveau_code": "N2", "d1_total": 6.0, "d2_total": 6.0, "d3_total": 2.5, "d1_display": 2.0, "d2_display": 2.0, "d3_display": 0.83, "note_sur_20": 16.4, "note_globale": 14.5, "categorie": "Leader", "is_anonymous": false, "rang": 1}, {"prenom_nom": "Mara Rizzello", "fonction": "Hotel and Export sales management", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 6.0, "d2_total": 2.0, "d3_total": 1.5, "d1_display": 2.0, "d2_display": 0.67, "d3_display": 0.5, "note_sur_20": 14.2, "note_globale": 9.5, "categorie": "Leader", "is_anonymous": false, "rang": 2}, {"prenom_nom": "Davide Consoli", "fonction": "Marketing Manager | Southern Area", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Manager", "niveau_code": "N2", "d1_total": 2.0, "d2_total": 6.0, "d3_total": 1.5, "d1_display": 0.67, "d2_display": 2.0, "d3_display": 0.5, "note_sur_20": 14.2, "note_globale": 9.5, "categorie": "Leader", "is_anonymous": false, "rang": 3}, {"prenom_nom": "Marina Lorenzini", "fonction": "Production planning consultant", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 4.5, "d2_total": 3.5, "d3_total": 1.5, "d1_display": 1.5, "d2_display": 1.17, "d3_display": 0.5, "note_sur_20": 14.2, "note_globale": 9.5, "categorie": "Leader", "is_anonymous": false, "rang": 4}, {"prenom_nom": "Lisa Mingarelli", "fonction": "Senior Product Manager SE Area - Business Unit Trade", "departement": "R&D, Innovation", "departement_code": "P5", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 4.5, "d2_total": 2.0, "d3_total": 2.5, "d1_display": 1.5, "d2_display": 0.67, "d3_display": 0.83, "note_sur_20": 14.0, "note_globale": 9.0, "categorie": "Leader", "is_anonymous": false, "rang": 5}, {"prenom_nom": "Gianluigi Pilotti", "fonction": "Sales Manager", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Manager", "niveau_code": "N2", "d1_total": 4.5, "d2_total": 2.0, "d3_total": 1.5, "d1_display": 1.5, "d2_display": 0.67, "d3_display": 0.5, "note_sur_20": 13.6, "note_globale": 8.0, "categorie": "Leader", "is_anonymous": false, "rang": 6}, {"prenom_nom": "Andrea Boe", "fonction": "Industrial Director", "departement": "General Management", "departement_code": "P1", "niveau": "Management / Strategic lead", "niveau_code": "N1", "d1_total": 4.5, "d2_total": 1.0, "d3_total": 1.5, "d1_display": 1.5, "d2_display": 0.33, "d3_display": 0.5, "note_sur_20": 13.1, "note_globale": 7.0, "categorie": "Leader", "is_anonymous": false, "rang": 7}, {"prenom_nom": "Claudia Fossa", "fonction": "Sales Administration Manager", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Manager", "niveau_code": "N2", "d1_total": 4.5, "d2_total": 0.0, "d3_total": 1.5, "d1_display": 1.5, "d2_display": 0.0, "d3_display": 0.5, "note_sur_20": 12.7, "note_globale": 6.0, "categorie": "Leader", "is_anonymous": false, "rang": 8}, {"prenom_nom": "SAFA BEN ROMDHANE", "fonction": "Mechanical designer / time and methods (temporary)", "departement": "R&D, Innovation", "departement_code": "P5", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 1.0, "d2_total": 2.0, "d3_total": 1.5, "d1_display": 0.33, "d2_display": 0.67, "d3_display": 0.5, "note_sur_20": 12.0, "note_globale": 4.5, "categorie": "Leader", "is_anonymous": false, "rang": 9}, {"prenom_nom": "Alice Cam", "fonction": "Quality and Safety", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 3.0, "d2_total": -1.0, "d3_total": 1.5, "d1_display": 1.0, "d2_display": -0.33, "d3_display": 0.5, "note_sur_20": 11.6, "note_globale": 3.5, "categorie": "Leader", "is_anonymous": false, "rang": 10}, {"prenom_nom": "Cristina Zelei", "fonction": "Finished goods warehouse manager", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Manager", "niveau_code": "N2", "d1_total": 6.0, "d2_total": 7.5, "d3_total": 0.0, "d1_display": 2.0, "d2_display": 2.5, "d3_display": 0.0, "note_sur_20": 16.0, "note_globale": 13.5, "categorie": "Enthusiast", "is_anonymous": false, "rang": 11}, {"prenom_nom": "simone carbonale", "fonction": "Operator", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 3.0, "d2_total": 6.0, "d3_total": 0.0, "d1_display": 1.0, "d2_display": 2.0, "d3_display": 0.0, "note_sur_20": 14.0, "note_globale": 9.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 12}, {"prenom_nom": "Alessandro Rapparini", "fonction": "Technical Draughtsman", "departement": "R&D, Innovation", "departement_code": "P5", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 4.5, "d2_total": 4.5, "d3_total": 0.0, "d1_display": 1.5, "d2_display": 1.5, "d3_display": 0.0, "note_sur_20": 14.0, "note_globale": 9.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 13}, {"prenom_nom": "Maura Fabbri", "fonction": "IT Manager", "departement": "Accounting, Administration", "departement_code": "P4", "niveau": "Manager", "niveau_code": "N2", "d1_total": 3.0, "d2_total": 4.5, "d3_total": 0.0, "d1_display": 1.0, "d2_display": 1.5, "d3_display": 0.0, "note_sur_20": 13.3, "note_globale": 7.5, "categorie": "Enthusiast", "is_anonymous": false, "rang": 14}, {"prenom_nom": "Claudia Mazzanti", "fonction": "Sales management Italy", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 3.0, "d2_total": 4.5, "d3_total": 0.0, "d1_display": 1.0, "d2_display": 1.5, "d3_display": 0.0, "note_sur_20": 13.3, "note_globale": 7.5, "categorie": "Enthusiast", "is_anonymous": false, "rang": 15}, {"prenom_nom": "Miryam Sarti", "fonction": "Marketing Manager", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Manager", "niveau_code": "N2", "d1_total": 3.0, "d2_total": 4.5, "d3_total": 0.0, "d1_display": 1.0, "d2_display": 1.5, "d3_display": 0.0, "note_sur_20": 13.3, "note_globale": 7.5, "categorie": "Enthusiast", "is_anonymous": false, "rang": 16}, {"prenom_nom": "DONATELLA LUPPI", "fonction": "Procurement office employee", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 3.5, "d2_total": 2.0, "d3_total": 0.0, "d1_display": 1.17, "d2_display": 0.67, "d3_display": 0.0, "note_sur_20": 12.5, "note_globale": 5.5, "categorie": "Enthusiast", "is_anonymous": false, "rang": 17}, {"prenom_nom": "alex montanari", "fonction": "Key assembly and coding manager", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Manager", "niveau_code": "N2", "d1_total": 2.0, "d2_total": 3.5, "d3_total": 0.0, "d1_display": 0.67, "d2_display": 1.17, "d3_display": 0.0, "note_sur_20": 12.5, "note_globale": 5.5, "categorie": "Enthusiast", "is_anonymous": false, "rang": 18}, {"prenom_nom": "FERIHA ELA CETINGIL", "fonction": "After-sales and supplier accounting", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 3.0, "d2_total": 2.0, "d3_total": 0.0, "d1_display": 1.0, "d2_display": 0.67, "d3_display": 0.0, "note_sur_20": 12.2, "note_globale": 5.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 19}, {"prenom_nom": "ANDREA ODORICI", "fonction": "SALES AREA MANAGER", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Manager", "niveau_code": "N2", "d1_total": 3.0, "d2_total": 2.0, "d3_total": 0.0, "d1_display": 1.0, "d2_display": 0.67, "d3_display": 0.0, "note_sur_20": 12.2, "note_globale": 5.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 20}, {"prenom_nom": "Giovanna Piccinini", "fonction": "Procurement office employee", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 2.0, "d2_total": 2.0, "d3_total": 0.0, "d1_display": 0.67, "d2_display": 0.67, "d3_display": 0.0, "note_sur_20": 11.8, "note_globale": 4.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 21}, {"prenom_nom": "Camilla Masetti", "fonction": "Employee", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 3.0, "d2_total": 1.0, "d3_total": 0.0, "d1_display": 1.0, "d2_display": 0.33, "d3_display": 0.0, "note_sur_20": 11.8, "note_globale": 4.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 22}, {"prenom_nom": "Pierluigi Di Tos", "fonction": "Sales functions", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 3.0, "d2_total": 1.0, "d3_total": 0.0, "d1_display": 1.0, "d2_display": 0.33, "d3_display": 0.0, "note_sur_20": 11.8, "note_globale": 4.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 23}, {"prenom_nom": "ALESSIA ANGIONI", "fonction": "ADMINISTRATION", "departement": "Accounting, Administration", "departement_code": "P4", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 2.0, "d2_total": 1.0, "d3_total": 0.0, "d1_display": 0.67, "d2_display": 0.33, "d3_display": 0.0, "note_sur_20": 11.3, "note_globale": 3.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 24}, {"prenom_nom": "Pia Benuzzi", "fonction": "Production planning office", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 2.0, "d2_total": 0.0, "d3_total": 0.0, "d1_display": 0.67, "d2_display": 0.0, "d3_display": 0.0, "note_sur_20": 10.9, "note_globale": 2.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 25}, {"prenom_nom": "luca biagi", "fonction": "Warehouse manager", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Manager", "niveau_code": "N2", "d1_total": 2.0, "d2_total": 0.0, "d3_total": 0.0, "d1_display": 0.67, "d2_display": 0.0, "d3_display": 0.0, "note_sur_20": 10.9, "note_globale": 2.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 26}, {"prenom_nom": "Alessandra Nanni", "fonction": "Sales Manager Italy", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 1.0, "d2_total": 1.0, "d3_total": 0.0, "d1_display": 0.33, "d2_display": 0.33, "d3_display": 0.0, "note_sur_20": 10.9, "note_globale": 2.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 27}, {"prenom_nom": "SABRINA FECCHIO", "fonction": "Administrative manager", "departement": "Accounting, Administration", "departement_code": "P4", "niveau": "Manager", "niveau_code": "N2", "d1_total": 3.0, "d2_total": -1.0, "d3_total": 0.0, "d1_display": 1.0, "d2_display": -0.33, "d3_display": 0.0, "note_sur_20": 10.9, "note_globale": 2.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 28}, {"prenom_nom": "Marco Franceschini", "fonction": "Parts warehouse manager", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 2.0, "d2_total": -1.0, "d3_total": 0.0, "d1_display": 0.67, "d2_display": -0.33, "d3_display": 0.0, "note_sur_20": 10.5, "note_globale": 1.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 29}, {"prenom_nom": "Roberta Zanni", "fonction": "Purchasing", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 2.0, "d2_total": -1.0, "d3_total": 0.0, "d1_display": 0.67, "d2_display": -0.33, "d3_display": 0.0, "note_sur_20": 10.5, "note_globale": 1.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 30}, {"prenom_nom": "chiara prezzi", "fonction": "Quality control of parts and raw materials", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 2.0, "d2_total": -1.0, "d3_total": 0.0, "d1_display": 0.67, "d2_display": -0.33, "d3_display": 0.0, "note_sur_20": 10.5, "note_globale": 1.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 31}, {"prenom_nom": "Silvia Zecchini", "fonction": "Quality control manager for finished goods", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Manager", "niveau_code": "N2", "d1_total": 1.0, "d2_total": 0.0, "d3_total": 0.0, "d1_display": 0.33, "d2_display": 0.0, "d3_display": 0.0, "note_sur_20": 10.4, "note_globale": 1.0, "categorie": "Enthusiast", "is_anonymous": false, "rang": 32}, {"prenom_nom": "gaia masotti", "fonction": "HR officer", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 2.0, "d2_total": -1.0, "d3_total": -0.5, "d1_display": 0.67, "d2_display": -0.33, "d3_display": -0.17, "note_sur_20": 10.2, "note_globale": 0.5, "categorie": "Enthusiast", "is_anonymous": false, "rang": 33}, {"prenom_nom": "Izabela Krystyna Kasperczyk", "fonction": "Operator", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 2.0, "d2_total": -2.5, "d3_total": 0.0, "d1_display": 0.67, "d2_display": -0.83, "d3_display": 0.0, "note_sur_20": 9.8, "note_globale": -0.5, "categorie": "Enthusiast", "is_anonymous": false, "rang": 34}, {"prenom_nom": "230849000001423008", "fonction": null, "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 2.0, "d2_total": -3.5, "d3_total": 0.0, "d1_display": 0.67, "d2_display": -1.17, "d3_display": 0.0, "note_sur_20": 9.3, "note_globale": -1.5, "categorie": "Enthusiast", "is_anonymous": true, "rang": 35}, {"prenom_nom": "130849000001432032", "fonction": null, "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 0.0, "d2_total": 2.0, "d3_total": -0.5, "d1_display": 0.0, "d2_display": 0.67, "d3_display": -0.17, "note_sur_20": 10.7, "note_globale": 1.5, "categorie": "Cautious", "is_anonymous": true, "rang": 36}, {"prenom_nom": "Marco Guermandi", "fonction": "Technical office manager", "departement": "R&D, Innovation", "departement_code": "P5", "niveau": "Manager", "niveau_code": "N2", "d1_total": 0.0, "d2_total": 0.0, "d3_total": -0.5, "d1_display": 0.0, "d2_display": 0.0, "d3_display": -0.17, "note_sur_20": 9.8, "note_globale": -0.5, "categorie": "Cautious", "is_anonymous": false, "rang": 37}, {"prenom_nom": "Barbara Montebugnoli", "fonction": null, "departement": "Customer Relations", "departement_code": "P2", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 0.0, "d2_total": -1.0, "d3_total": 0.0, "d1_display": 0.0, "d2_display": -0.33, "d3_display": 0.0, "note_sur_20": 9.6, "note_globale": -1.0, "categorie": "Cautious", "is_anonymous": false, "rang": 38}, {"prenom_nom": "SILVIA TONDI", "fonction": "HIGH SCHOOL DIPLOMA", "departement": "Accounting, Administration", "departement_code": "P4", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": -2.5, "d2_total": 1.0, "d3_total": -0.5, "d1_display": -0.83, "d2_display": 0.33, "d3_display": -0.17, "note_sur_20": 9.1, "note_globale": -2.0, "categorie": "Cautious", "is_anonymous": false, "rang": 39}, {"prenom_nom": "Massimiliano Innocenti", "fonction": "Technical office", "departement": "R&D, Innovation", "departement_code": "P5", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": -2.5, "d2_total": -1.0, "d3_total": 0.0, "d1_display": -0.83, "d2_display": -0.33, "d3_display": 0.0, "note_sur_20": 8.5, "note_globale": -3.5, "categorie": "Cautious", "is_anonymous": false, "rang": 40}, {"prenom_nom": "CINZIA ZOLFERINI", "fonction": "Special orders office", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 0.0, "d2_total": -2.0, "d3_total": -2.5, "d1_display": 0.0, "d2_display": -0.67, "d3_display": -0.83, "note_sur_20": 8.0, "note_globale": -4.5, "categorie": "Cautious", "is_anonymous": false, "rang": 41}, {"prenom_nom": "130849000001432032", "fonction": null, "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": -1.5, "d2_total": -3.5, "d3_total": 0.0, "d1_display": -0.5, "d2_display": -1.17, "d3_display": 0.0, "note_sur_20": 7.8, "note_globale": -5.0, "categorie": "Cautious", "is_anonymous": true, "rang": 42}, {"prenom_nom": "daniele montanino", "fonction": "Department manager", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 0.0, "d2_total": -4.5, "d3_total": -0.5, "d1_display": 0.0, "d2_display": -1.5, "d3_display": -0.17, "note_sur_20": 7.8, "note_globale": -5.0, "categorie": "Cautious", "is_anonymous": false, "rang": 43}, {"prenom_nom": "Marianna Colapietro", "fonction": "Warehouse logistics", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 0.0, "d2_total": -4.5, "d3_total": -2.5, "d1_display": 0.0, "d2_display": -1.5, "d3_display": -0.83, "note_sur_20": 6.9, "note_globale": -7.0, "categorie": "Cautious", "is_anonymous": false, "rang": 44}, {"prenom_nom": "CLAUDIA MONACO", "fonction": "EMPLOYEE", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 0.0, "d2_total": -5.0, "d3_total": -2.5, "d1_display": 0.0, "d2_display": -1.67, "d3_display": -0.83, "note_sur_20": 6.7, "note_globale": -7.5, "categorie": "Cautious", "is_anonymous": false, "rang": 45}, {"prenom_nom": "Domenico Ippolito", "fonction": "Supplier scheduling manager", "departement": "Production, HR, Logistics", "departement_code": "P3", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 0.0, "d2_total": -7.5, "d3_total": -0.5, "d1_display": 0.0, "d2_display": -2.5, "d3_display": -0.17, "note_sur_20": 6.4, "note_globale": -8.0, "categorie": "Cautious", "is_anonymous": false, "rang": 46}, {"prenom_nom": "MATILDE CAMPAGNA", "fonction": "Sales office, order entry", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 0.0, "d2_total": -6.0, "d3_total": -2.5, "d1_display": 0.0, "d2_display": -2.0, "d3_display": -0.83, "note_sur_20": 6.2, "note_globale": -8.5, "categorie": "Cautious", "is_anonymous": false, "rang": 47}, {"prenom_nom": "FEDERICA BRUNETTI", "fonction": "Switchboard", "departement": "Customer Relations", "departement_code": "P2", "niveau": "Employee / Technician", "niveau_code": "N3", "d1_total": 0.0, "d2_total": -7.5, "d3_total": -2.5, "d1_display": 0.0, "d2_display": -2.5, "d3_display": -0.83, "note_sur_20": 5.6, "note_globale": -10.0, "categorie": "Cautious", "is_anonymous": false, "rang": 48}];
+const verbatims = ["Automatic generation of offers based on the customer's history.\nChecking orders and anomalies when prices or customer data do not match.\nAutomatic categorisation of incoming e-mails (e.g. requests, information, orders).\nData analysis and reporting, and replenishment forecasts in case of stock-outs for a regular customer.", "COMPETITOR ANALYSIS: Compare competitors' positioning, messages, campaigns, digital presence and arguments. TREND RESEARCH: Cross-reference online searches and social conversations to anticipate rising topics. CONTENT CREATION: Generate drafts of posts, newsletters, articles and landing pages consistent with the brand's tone. VIRTUAL BRAND PRESENTER: Develop a recognisable and consistent avatar to be used as the company's digital face.", "Competitor analysis. Updating manuals, newsletters, value proposition. Priority management and planning. Defining timelines in product and/or process development.", "Channel and multi-brand commercial policy, with particular reference to consistent pricing. Promotional planning.", "Through integration with the ERP, automatic monthly analysis per customer of sales with industrial costs, selling prices and margins. Analysis of market trends and comparison with sales per customer. Report on this analysis to understand the strengths and weaknesses of the commercial strategy, in order to better adapt it to customers' needs.", "Adjusting the production budget based on sales, with ERP integration. Warehouse analysis to recover components by assembling significant items.", "Automate reporting so that reports can be generated quickly from management system data - automated decision flows for handling non-conformities/customer support based on documents (photos, reports from the market), etc.", "I think it could help me a great deal, for example when revising the production budget, to quickly analyse sales data and propose changes to adjust production accordingly. At the moment I have to analyse all the data with fragmented tools, which takes a lot of time; I expect to then only have to examine the cases that require added value.\nI would also like to use AI for other quick daily queries that are easy to set up.", "Sales Forecasting: Use AI to analyze sales data, customer behavior and CRM opportunities to forecast results and identify risks or growth opportunities.\n\nSales Support: Use an AI assistant to help salespeople prepare meetings and offers by providing customer insights, deal history and personalized recommendations.\n\nCustomer Prioritization: Use AI to segment customers and prospects by potential and buying behavior, helping the sales team focus on the most valuable opportunities.", "Improve the process of analysing any (non standard) new sales order received by the commercial department: review the Production Planning process by optimising production efficiencies and reduce lead times", "Support in the analysis of the efficiency of each Process within the Operations and define a PDCA action plan to monitor the results or manage a Continuous Improvement process", "Design the process (probably a check list) to support each colleague while writing effective emails; this will help in the attempt of reducing the number of emails each of us receive and also to reduce the delay in getting the correct answer;", "help to improve my communications to customers like prices increase, delay of shipment, support in calculating production budget in terms of quantity", "Use AI to automatically create 2D views (plans, sections, details) from 3D models.", "Automatic extraction of information from the drawing or 3D model, then automatic generation of bills of materials (BOM) in the Diapason management system.", "Develop a smart tool that automatically updates bills of materials and related documents when a part is modified in an assembly.", "Creating images from existing models or photos, changing the colour, material, finish or marking for method sheets (I already use it)."];
+const analyseLlm = {"blocs_thematiques": [{"titre": "Sales effectiveness", "besoins": ["Offers generated from customer history", "Meeting preparation with customer insights", "Customer segmentation and prioritisation"], "mot_cle_strategique": "Conversion", "categorie": "X_relation_client"}, {"titre": "Customer communication and support", "besoins": ["Automatic categorisation of incoming e-mails", "Drafting sensitive customer messages (price increases, delays)", "Faster handling of non-conformities from field reports and photos"], "mot_cle_strategique": "Responsiveness", "categorie": "X_relation_client"}, {"titre": "Marketing and commercial policy", "besoins": ["Competitor and trend analysis", "Content creation (posts, newsletters, landing pages)", "Virtual brand presenter", "Consistent multi-brand pricing and promotional planning"], "mot_cle_strategique": "Brand", "categorie": "X_relation_client"}, {"titre": "Sales and ERP data analysis", "besoins": ["Monthly sales, cost and margin analysis per customer", "Fast automated reporting from management systems", "Order and data anomaly detection"], "mot_cle_strategique": "Reliable data", "categorie": "Y_productivite"}, {"titre": "Production and stock planning", "besoins": ["Production budget revision based on sales", "Analysis of non-standard orders and lead time reduction", "Stock analysis and replenishment forecasts"], "mot_cle_strategique": "Lead time", "categorie": "Y_productivite"}, {"titre": "Organisation and continuous improvement", "besoins": ["Process efficiency analysis and PDCA plan", "Guidelines for effective e-mails", "Development planning and documentation"], "mot_cle_strategique": "Efficiency", "categorie": "Y_productivite"}, {"titre": "Technical design automation and forecasting", "besoins": ["2D views generated from 3D models", "Automatic BOM extraction and update in Diapason", "Image generation for method sheets", "Sales forecasting"], "mot_cle_strategique": "Engineering speed", "categorie": "Z_rd"}], "problematiques_profondes": ["Sales, production and stock data are analysed with fragmented tools, which makes budget revisions and planning slow and manual.", "The link between what is sold and what is produced is not fluid: several ideas aim to align production budgets, planning and stock with actual sales.", "Communication flows (customer e-mails, internal e-mails, non-conformity reports) generate a high volume of low-value handling and delays in getting the right answer.", "AI appetite is concentrated in a few managers and specialists: most employees, especially at technician and employee level, do not yet see concrete uses for their own job."], "besoin_latent_global": "Connect sales, production and stock data so that decisions are made faster and people only deal with the cases that really need their expertise.", "lecture_strategique": {"court_terme": {"trajectoire": "Automate sales and margin reporting from the ERP and equip customer-facing teams with assistants for e-mails and offers.", "benefices": "Visible time savings in sales and planning, which can convince the many Enthusiasts without project ideas.", "risques": "Leaving production and employee-level teams aside, where the score is already negative."}, "long_terme": {"trajectoire": "Build an integrated sales–production–stock data foundation supporting forecasting, planning and technical design automation.", "benefices": "Shorter lead times, more reliable budgets and faster engineering cycles.", "risques": "Low cross-functional engagement: only 20% of idea holders think of projects for the company as a whole, which could fragment the approach into isolated tools."}}, "angle_mort": "Production, HR and Logistics is the largest group of respondents (23 people) and has a negative score, yet almost all ideas about production are expressed by managers and planners rather than by the shop floor itself.", "besoins_latents_fondamentaux": ["Time", "Integrated data", "Faster decisions", "Involvement of operational teams"], "question_strategique": "Which shared data flow between sales and production should be made reliable first, so that individual AI ideas become a common company project?"};
+const portfolio = {"nb_projets_bruts": 17, "nb_projets_dedoublonnes": 16, "densite_projection": 33.33, "seuil_densite": 25, "distribution": {"X_relation_client": {"count": 5, "percentage": 31.25, "projets": ["Sales assistant (offers generated from customer history, meeting preparation, customer segmentation and prioritisation)", "Customer e-mails and communications (automatic categorisation of incoming e-mails, drafting messages on price increases or shipping delays)", "Marketing intelligence and content (competitor analysis, trend research, posts, newsletters, landing pages, virtual brand presenter)", "Channel and multi-brand commercial policy (consistent pricing, promotional planning)", "Non-conformity and customer support handling based on documents and photos from the market"]}, "Y_productivite": {"count": 8, "percentage": 50.0, "projets": ["Order checks and detection of price or customer data anomalies", "Automated sales and margin analysis per customer via ERP, with fast reporting and quick daily queries", "Production budget revision based on actual sales, integrated with ERP", "Stock analysis (component recovery, replenishment forecasts for regular customers)", "Analysis of non-standard sales orders and optimisation of production planning and lead times", "Operations process efficiency analysis and PDCA continuous improvement plan", "Guidelines to write more effective internal e-mails and reduce e-mail volume", "Product development planning and documentation (manuals, value proposition, priorities, timelines)"]}, "Z_rd": {"count": 3, "percentage": 18.75, "projets": ["Sales forecasting from sales, customer behaviour and CRM data", "CAD automation (2D views from 3D models, automatic BOM extraction and update in Diapason)", "Image generation from models or photos for method sheets (colour, material, finish, marking)"]}}, "equilibre": "The portfolio is centred on internal productivity (Y, half of the projects), mostly around sales data, ERP and production planning. Customer and market-facing uses (X) are well represented, while R&D uses (Z) are concentrated on technical design and forecasting.", "commentaire_entonnoir": "16 unique projects for 48 respondents, i.e. a projection density of 33.3%, above the 25% threshold. However, these ideas come from only 10 people, and two of them account for 7 of the 17 raw ideas."};
+const bonnesNouvelles = [{"rang": 2, "signal": "capacite_action", "condition_remplie": true, "phrase": "The organisation has a support base and a core group of drivers (Confident 72.92%, Leaders 10)."}, {"rang": 3, "signal": "gouvernance_ok", "condition_remplie": true, "phrase": "Governance is not a blocker (blocking N1 0.0% < 34%)."}, {"rang": 5, "signal": "segment_locomotive", "condition_remplie": true, "phrase": "Some teams are pulling upwards (Manager: +29.3 pts)."}];
+const defis = [{"rang": 3, "probleme": "aim_defavorable", "gravite": "serieux", "condition_remplie": true, "phrase": "The dynamic is not trending upwards (AIM -6.25)."}, {"rang": 4, "probleme": "dissonance_elevee", "gravite": "serieux", "condition_remplie": true, "phrase": "Answers show low consistency (dissonance 43.75%)."}, {"rang": 5, "probleme": "appetence_faible", "gravite": "attention", "condition_remplie": true, "phrase": "Too few actionable ideas (idea holders 20.83%, 17 ideas)."}];
+const orientation = {"condition_declenchee": "demarche_ia", "phrase": "The data indicate that the organisation is ready to structure an AI approach (AI Committee + Roadmap + tool experimentation)."};
+const s2Data = {"confiants": {"absolu": 35, "percentage": 72.92, "seuil_absolu": 10, "seuil_pct": 25, "atteint": true, "commentaire": "Support base reached."}, "reservoir_leaders": {"absolu": 10, "percentage": 20.83, "seuil": 5, "atteint": true, "commentaire": "Core group ready for an AI Committee."}, "directeurs_bloquants": {"percentage": 0.0, "seuil": 34, "atteint": true, "commentaire": "Leadership governance is not a blocker."}};
+const s2Proj = {"nb_projets_bruts": 17, "seuil_projets": 20, "atteint_projets": false, "commentaire_projets": "Volume of ideas insufficient for an audit.", "appetence": {"absolu": 10, "percentage": 20.83, "seuil": 25, "atteint": false, "commentaire": "Too few idea holders."}};
+const s4Data = {"fracture": {"sigma": 3.42, "seuil": 15, "alerte": false, "commentaire": "Relatively homogeneous skill level."}, "naivete": {"count": 2, "percentage": 4.17, "seuil": 30, "alerte": false, "commentaire": "Naivety rate under control."}, "dissonance": {"count": 21, "percentage": 43.75, "seuil": 30, "alerte": true, "commentaire": "High uncertainty: human review recommended."}, "remise": {"count_projet_pour_soi": 10, "count_avec_projet": 10, "percentage": 100.0, "seuil": 70, "atteint": true, "commentaire": "Personal ownership of AI."}, "engagement": {"count_projet_pour_autres": 2, "count_avec_projet": 10, "percentage": 20.0, "seuil": 30, "atteint": false, "commentaire": "Lack of cross-functional vision."}, "consultants": {"count": 0, "count_avec_projet": 10, "percentage": 0.0, "seuil": 30, "atteint": true, "commentaire": "Balance between personal and collective interest."}};
+
+// ============================================================
+// TOOLTIP SYSTEM — Refonte complète
+// ============================================================
+let activeTooltip = null;
+
+// Special tooltip for AIM Score formula
+const aimFormulaTooltip = {
+    label: "AI.M Score",
+    definition: "Overall AI maturity indicator of the organisation.",
+    calcul: "(Number of Leaders \u2212 Number of Cautious) / Number of participants \u00d7 100<br><br><strong>Leaders</strong> = Confident respondents who declared at least one AI project<br><strong>Range</strong>: [-100, +100]",
+    ideal: "Above 0. A positive score = more Leaders than Cautious. The higher it is, the more ready the organisation is to act."
+};
+
+function positionTooltip(pop, triggerEl) {
+    const rect = triggerEl.getBoundingClientRect();
+    const popW = Math.min(340, window.innerWidth * 0.9);
+    pop.style.width = popW + 'px';
+
+    // Mesure la hauteur sans afficher (visibility:hidden uniquement, PAS display:none
+    // pour éviter que le style inline n'écrase la classe CSS .show)
+    pop.style.visibility = 'hidden';
+    pop.style.display = 'block';
+    const popH = pop.offsetHeight;
+    // Ne PAS remettre display:none ici — laisser .show gérer le display via CSS
+    pop.style.display = '';
+    pop.style.visibility = '';
+
+    let top;
+    if (rect.top - popH - 10 > 0) {
+        top = rect.top - popH - 10;
+    } else {
+        top = rect.bottom + 10;
+    }
+
+    let left = rect.left + rect.width / 2 - popW / 2;
+    if (left < 8) left = 8;
+    if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+
+    pop.style.top = top + 'px';
+    pop.style.left = left + 'px';
+}
+
+function showTooltip(el) {
+    closeAllTooltips();
+    const key = el.getAttribute('data-tt-key');
+    let t;
+    if (key === 'aim_score_formula') {
+        t = aimFormulaTooltip;
+    } else {
+        t = tooltips[key];
+    }
+    if (!t) return;
+
+    const pop = document.createElement('div');
+    pop.className = 'tt-pop';
+    pop.innerHTML = '<strong>' + t.label + '</strong><br><br>' + t.definition + '<br><br><em>Calculation: ' + t.calcul + '</em><br><em>Target: ' + t.ideal + '</em>';
+    document.body.appendChild(pop);
+    positionTooltip(pop, el);
+    pop.classList.add('show');
+    activeTooltip = { pop: pop, trigger: el };
+}
+
+function closeAllTooltips() {
+    document.querySelectorAll('.tt-pop').forEach(p => p.remove());
+    activeTooltip = null;
+}
+
+function handleTooltipClick(e) {
+    const el = e.currentTarget;
+    e.stopPropagation();
+    if (activeTooltip && activeTooltip.trigger === el) {
+        closeAllTooltips();
+    } else {
+        showTooltip(el);
+    }
+}
+
+// Desktop: hover + click toggle; Mobile: tap toggle
+function initTooltips() {
+    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    // --- CLICK / TAP (desktop + mobile) : toggle affichage/masquage ---
+    document.addEventListener('click', function(e) {
+        const el = e.target.closest('.tt');
+        if (el) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (activeTooltip && activeTooltip.trigger === el) {
+                closeAllTooltips();  // 2ème tap = fermeture
+            } else {
+                showTooltip(el);     // 1er tap = ouverture
+            }
+        } else {
+            // Clic en dehors = fermeture (sauf si clic sur le popup lui-même)
+            if (activeTooltip && !activeTooltip.pop.contains(e.target)) {
+                closeAllTooltips();
+            }
+        }
+    });
+
+    // --- HOVER (desktop uniquement) ---
+    if (!isMobile) {
+        document.addEventListener('mouseover', function(e) {
+            const el = e.target.closest('.tt');
+            if (el) { showTooltip(el); }
+        });
+        document.addEventListener('mouseout', function(e) {
+            const el = e.target.closest('.tt');
+            if (el) {
+                const related = e.relatedTarget;
+                // Fermer seulement si on ne va pas vers le popup
+                if (!related || !(activeTooltip && activeTooltip.pop.contains(related))) {
+                    closeAllTooltips();
+                }
+            } else if (activeTooltip) {
+                // Quitter le popup lui-même
+                const pop = activeTooltip.pop;
+                if (pop.contains(e.target) && !pop.contains(e.relatedTarget)) {
+                    closeAllTooltips();
+                }
+            }
+        });
+    }
+
+    // --- SCROLL : fermeture automatique ---
+    window.addEventListener('scroll', function() {
+        if (activeTooltip) { closeAllTooltips(); }
+    }, { passive: true });
+
+    // --- TOUCHE ECHAP ---
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && activeTooltip) { closeAllTooltips(); }
+    });
+}
+
+// ============================================================
+// DONUT CHART (Canvas)
+// ============================================================
+function drawDonut() {
+    const canvas = document.getElementById('donutChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const data = [10, 25, 13];
+    const colors = ['#22C55E', '#F59E0B', '#EF4444'];
+    const total = data.reduce((a,b) => a+b, 0);
+    const cx = 130, cy = 130, r = 100, rInner = 60;
+    let angle = -Math.PI/2;
+    data.forEach((val, i) => {
+        const slice = (val/total) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, angle, angle + slice);
+        ctx.arc(cx, cy, rInner, angle + slice, angle, true);
+        ctx.closePath();
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+        angle += slice;
+    });
+    ctx.fillStyle = '#171B20';
+    ctx.font = 'bold 32px DM Sans, Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(total, cx, cy + 5);
+    ctx.font = '12px DM Sans, Arial';
+    ctx.fillStyle = '#666';
+    ctx.fillText('respondents', cx, cy + 22);
+}
+
+// ============================================================
+// BAR CHARTS
+// ============================================================
+function drawBars(containerId, data) {
+    const container = document.getElementById(containerId);
+    data.forEach(item => {
+        const aim = item.aim_score;
+        const color = aim >= 20 ? '#22C55E' : aim >= 0 ? '#F59E0B' : '#EF4444';
+        const pct = Math.max(2, Math.min(100, (aim + 100) / 2));
+        container.innerHTML += '<div class="bar-row"><div class="bar-label">' + (item.label || item.code) + '</div><div class="bar-track-h"><div class="bar-fill-h" style="width:' + pct + '%;background:' + color + '">' + aim + '</div></div><span class="bar-n">n=' + item.nb_repondants + '</span></div>';
+    });
+}
+
+// ============================================================
+// CAPACITY CARDS — Chiffre + Pourcentage
+// ============================================================
+function drawCapacityCards() {
+    const container = document.getElementById('capacityCards');
+    const n = 48;
+    const cards = [
+        { label: 'Confident', val: s2Data.confiants.absolu, pct: s2Data.confiants.percentage,
+           comment: s2Data.confiants.commentaire, ok: s2Data.confiants.atteint, ttKey: 'confiants' },
+        { label: 'Leader pool', val: s2Data.reservoir_leaders.absolu, pct: s2Data.reservoir_leaders.percentage,
+           comment: s2Data.reservoir_leaders.commentaire, ok: s2Data.reservoir_leaders.atteint, ttKey: 'leaders' },
+        { label: 'Blocking directors', val: s2Data.directeurs_bloquants.count !== undefined ? s2Data.directeurs_bloquants.count : '', pct: s2Data.directeurs_bloquants.percentage,
+           comment: s2Data.directeurs_bloquants.commentaire, ok: s2Data.directeurs_bloquants.atteint, ttKey: 'directeurs_bloquants' },
+        { label: 'Declared projects', val: s2Proj.nb_projets_bruts, pct: null,
+           comment: s2Proj.commentaire_projets, ok: s2Proj.atteint_projets, ttKey: 'nb_projets' },
+        { label: 'Appetite', val: s2Proj.appetence.absolu, pct: s2Proj.appetence.percentage,
+           comment: s2Proj.appetence.commentaire, ok: s2Proj.appetence.atteint, ttKey: 'appetence' },
+    ];
+    cards.forEach(c => {
+        const cls = c.ok ? 'ok' : (c.label.includes('Blocking') ? 'alert' : 'warn');
+        let display = '';
+        if (c.pct !== null && c.pct !== undefined) {
+            display = '<div class="val">' + c.val + '</div><div class="sub-val">' + c.pct + '%</div>';
+        } else {
+            display = '<div class="val">' + c.val + '</div>';
+        }
+        container.innerHTML += '<div class="card ' + cls + '"><span class="tt" data-tt-key="' + c.ttKey + '">i</span><div class="lbl">' + c.label + '</div>' + display + '<div class="comment">' + c.comment + '</div></div>';
+    });
+}
+
+// ============================================================
+// PARTICIPANTS TABLE — avec filtres et normalisation /20
+// ============================================================
+function drawParticipants() {
+    // Build filter dropdowns
+    const filterBar = document.getElementById('participantFilters');
+    const services = [...new Set(participants.map(p => p.departement))].sort();
+    const niveaux = [...new Set(participants.map(p => p.niveau_code))].sort();
+
+    let filterHtml = '<select id="filterService"><option value="">All departments</option>';
+    services.forEach(s => { filterHtml += '<option value="' + s + '">' + s + '</option>'; });
+    filterHtml += '</select>';
+
+    filterHtml += '<select id="filterNiveau"><option value="">All levels</option>';
+    niveaux.forEach(n => { filterHtml += '<option value="' + n + '">' + n + '</option>'; });
+    filterHtml += '</select>';
+
+    filterHtml += '<select id="filterCategorie"><option value="">All categories</option><option value="Leader">Leader</option><option value="Enthusiast">Enthusiast</option><option value="Cautious">Cautious</option></select>';
+    filterBar.innerHTML = filterHtml;
+
+    // Draw table
+    renderParticipantsTable();
+
+    // Event listeners
+    document.getElementById('filterService').addEventListener('change', renderParticipantsTable);
+    document.getElementById('filterNiveau').addEventListener('change', renderParticipantsTable);
+    document.getElementById('filterCategorie').addEventListener('change', renderParticipantsTable);
+}
+
+function renderParticipantsTable() {
+    const table = document.getElementById('participantsTable');
+    const svcFilter = document.getElementById('filterService') ? document.getElementById('filterService').value : '';
+    const nivFilter = document.getElementById('filterNiveau') ? document.getElementById('filterNiveau').value : '';
+    const catFilter = document.getElementById('filterCategorie') ? document.getElementById('filterCategorie').value : '';
+
+    let filtered = participants.filter(p => {
+        if (svcFilter && p.departement !== svcFilter) return false;
+        if (nivFilter && p.niveau_code !== nivFilter) return false;
+        if (catFilter && p.categorie !== catFilter) return false;
+        return true;
+    });
+
+    let html = '<thead><tr><th>#</th><th>Name</th><th>Role</th><th>Department</th><th>Level</th><th>D1 (Confidence)</th><th>D2 (Knowledge)</th><th>D3 (Appetite)</th><th>Score /20</th><th>Category</th></tr></thead><tbody>';
+    filtered.forEach((p, idx) => {
+        const cls = p.categorie === 'Leader' ? 'cat-leader' : p.categorie === 'Enthusiast' ? 'cat-enthousiaste' : 'cat-mefiant';
+        const icon = p.categorie === 'Leader' ? '\ud83d\udfe2' : p.categorie === 'Enthusiast' ? '\ud83d\udfe0' : '\ud83d\udd34';
+        const d1 = p.d1_display !== undefined ? p.d1_display : (p.d1_total / 3).toFixed(2);
+        const d2 = p.d2_display !== undefined ? p.d2_display : (p.d2_total / 3).toFixed(2);
+        const d3 = p.d3_display !== undefined ? p.d3_display : (p.d3_total / 3).toFixed(2);
+        const note20 = p.note_sur_20 !== undefined ? p.note_sur_20 : ((parseFloat(d1) + parseFloat(d2) + parseFloat(d3) + 7.5) * 20 / 15).toFixed(1);
+        html += '<tr><td>' + (idx + 1) + '</td><td>' + (p.is_anonymous ? '<em style="color:#999">' + p.prenom_nom + '</em>' : p.prenom_nom) + '</td><td style="font-size:12px">' + (p.fonction || '\u2014') + '</td><td style="font-size:12px">' + p.departement + '</td><td style="font-size:12px">' + p.niveau_code + '</td><td>' + d1 + '</td><td>' + d2 + '</td><td>' + d3 + '</td><td><strong>' + note20 + '</strong></td><td class="' + cls + '">' + icon + ' ' + p.categorie + '</td></tr>';
+    });
+    html += '</tbody>';
+    table.innerHTML = html;
+
+    const countEl = document.getElementById('participantCount');
+    if (countEl) countEl.textContent = filtered.length + ' result(s) out of ' + participants.length;
+}
+
+// ============================================================
+// HEATMAP — Plotly avec tooltips enrichis
+// ============================================================
+function drawHeatmap() {
+    const nivLabels = {'N1':'Management','N2':'Manager','N3':'Employee'};
+    const deptLabels = {'P2':'Customer Relations','P3':'Production/HR','P4':'Accounting/Admin','P5':'R&D/Innovation','P1':'General Mgmt'};
+    const deptOrder = ['P2','P3','P4','P5','P1'];
+    const nivOrder = ['N1','N2','N3'];
+
+    const z = [], customdata = [], xLabels = deptOrder.map(d => deptLabels[d]), yLabels = nivOrder.map(n => nivLabels[n]);
+
+    nivOrder.forEach(n => {
+        const row = [], cdRow = [];
+        deptOrder.forEach(d => {
+            const cell = heatmapData.find(m => m.departement === d && m.niveau === n);
+            const pct = cell ? cell.pct_non_confiants : null;
+            const nb = cell ? cell.nb_repondants : 0;
+            const nbm = cell ? (cell.nb_mefiants || 0) : 0;
+            row.push(nb > 0 ? pct : null);
+            cdRow.push({ niv: nivLabels[n], dept: deptLabels[d], nb: nb, nbm: nbm, pct: pct });
+        });
+        z.push(row);
+        customdata.push(cdRow);
+    });
+
+    const trace = {
+        type: 'heatmap', z: z, x: xLabels, y: yLabels, customdata: customdata,
+        colorscale: [[0,'#dcfce7'],[0.3,'#fef9c3'],[0.6,'#fed7aa'],[1,'#fecaca']],
+        zmin: 0, zmax: 100,
+        hovertemplate: '<b>%{customdata.niv} \u00d7 %{customdata.dept}</b><br>Respondents: %{customdata.nb}<br>Cautious: %{customdata.nbm}<br>Rate: %{z:.0f}%<extra></extra>',
+        text: z.map((row, ri) => row.map((v, ci) => {
+            if (v === null) return '\u2014';
+            return v.toFixed(0) + '%';
+        })),
+        texttemplate: '%{text}', showscale: true,
+        colorbar: { title: '% Cautious', titleside: 'right' }
+    };
+
+    const layout = {
+        margin: { t: 10, b: 60, l: 100, r: 80 },
+        xaxis: { side: 'bottom' },
+        yaxis: { autorange: 'reversed' },
+        font: { family: 'DM Sans, Arial, sans-serif', size: 13 },
+        height: 280
+    };
+
+    Plotly.newPlot('heatmapPlotly', [trace], layout, { displayModeBar: true, displaylogo: false, responsive: true, modeBarButtonsToRemove: ['lasso2d','select2d'] });
+}
+
+// ============================================================
+// RADAR — Plotly avec valeurs absolues
+// ============================================================
+function drawRadar() {
+    // positif = dépasser le seuil est bon (vert) ; négatif = dépasser est mauvais (rouge)
+    const indicators = [
+        { name: 'Naivety',          val: s4Data.naivete.percentage,    seuil: s4Data.naivete.seuil,    count: s4Data.naivete.count,                       positif: false },
+        { name: 'Dissonance',           val: s4Data.dissonance.percentage, seuil: s4Data.dissonance.seuil, count: s4Data.dissonance.count,                    positif: false },
+        { name: 'Self-questioning',   val: s4Data.remise.percentage,     seuil: s4Data.remise.seuil,     count: s4Data.remise.count_projet_pour_soi,        positif: true  },
+        { name: 'Collective engagement', val: s4Data.engagement.percentage, seuil: s4Data.engagement.seuil, count: s4Data.engagement.count_projet_pour_autres, positif: true  },
+        { name: '% Consultants',        val: s4Data.consultants.percentage,seuil: s4Data.consultants.seuil,count: s4Data.consultants.count,                   positif: false },
+    ];
+
+    // Normalisation : seuil toujours tracé à 70 sur l'axe (0-100)
+    // valeur_norm = (valeur_réelle / seuil) * 70  — plafonné à 100
+    const SEUIL_NORM = 70;
+    const normalize = (val, seuil) => seuil > 0 ? Math.min(100, (val / seuil) * SEUIL_NORM) : 0;
+
+    const theta     = indicators.map(i => i.name);
+    const rNorm     = indicators.map(i => normalize(i.val, i.seuil));
+    const seuilNorm = indicators.map(() => SEUIL_NORM);  // cercle à 70 pour tous
+    const hoverTexts = indicators.map(i =>
+        i.name + '<br>Actual value: ' + i.val + '%' +
+        '<br>Threshold: ' + i.seuil + '%' +
+        '<br>Absolute: ' + i.count
+    );
+
+    const traceVal = {
+        type: 'scatterpolar', r: [...rNorm, rNorm[0]], theta: [...theta, theta[0]],
+        fill: 'toself', fillcolor: 'rgba(13,115,119,0.15)',
+        line: { color: '#0d7377', width: 2 },
+        name: 'Values', text: hoverTexts.concat([hoverTexts[0]]),
+        hoverinfo: 'text'
+    };
+    const traceSeuil = {
+        type: 'scatterpolar', r: [...seuilNorm, seuilNorm[0]], theta: [...theta, theta[0]],
+        line: { color: '#EF4444', width: 1, dash: 'dash' },
+        name: "Alert threshold (70%)", hoverinfo: 'skip'
+    };
+
+    // Couleurs des labels d'axe : vert si positif, rouge si négatif
+    const GREEN = '#16a34a';
+    const RED   = '#EF4444';
+    const angularTickColors = indicators.map(i => i.positif ? GREEN : RED);
+
+    const layout = {
+        polar: {
+            radialaxis: {
+                visible: true,
+                range: [0, 100],
+                tickvals: [0, SEUIL_NORM, 100],
+                ticktext: ['0', 'threshold', '100'],
+                tickfont: { size: 10 }
+            },
+            angularaxis: {
+                tickfont: { size: 12 }
+            }
+        },
+        showlegend: true,
+        legend: { x: 0.5, y: -0.15, xanchor: 'center', orientation: 'h' },
+        margin: { t: 30, b: 60, l: 60, r: 60 },
+        font: { family: 'DM Sans, Arial, sans-serif', size: 12 },
+        height: 400
+    };
+
+    Plotly.newPlot('radarPlotly', [traceVal, traceSeuil], layout, {
+        displayModeBar: true, displaylogo: false, responsive: true
+    });
+
+    // Colorier les labels d'axe après rendu (Plotly ne supporte pas les couleurs par axe nativement)
+    setTimeout(function() {
+        const svgEl = document.querySelector('#radarPlotly svg');
+        if (!svgEl) return;
+        // Les labels angulaires sont dans des éléments <text> de classe 'angularaxistick'
+        const tickTexts = svgEl.querySelectorAll('.angularaxistick text, .angular-axis text, text.angularaxistick');
+        tickTexts.forEach(function(el) {
+            const label = el.textContent.trim();
+            const ind = indicators.find(i => i.name === label);
+            if (ind) el.style.fill = ind.positif ? GREEN : RED;
+        });
+        // Fallback : chercher par contenu de texte dans tous les <text> du SVG
+        if (tickTexts.length === 0) {
+            svgEl.querySelectorAll('text').forEach(function(el) {
+                const label = el.textContent.trim();
+                const ind = indicators.find(i => i.name === label);
+                if (ind) el.style.fill = ind.positif ? GREEN : RED;
+            });
+        }
+    }, 300);
+}
+
+// ============================================================
+// INDICATOR CARDS — avec valeurs absolues + pourcentages
+// ============================================================
+function drawIndicators() {
+    const container = document.getElementById('indicatorCards');
+    const inds = [
+        { key: 'fracture_savoir', label: 'Knowledge gap (\u03c3)', val: s4Data.fracture.sigma, seuil: s4Data.fracture.seuil, alerte: s4Data.fracture.alerte, comment: s4Data.fracture.commentaire, unit: '', detail: '\u03c3 = ' + s4Data.fracture.sigma + ' (threshold: \u2264 ' + s4Data.fracture.seuil + ')' },
+        { key: 'naivete', label: 'Naivety', val: s4Data.naivete.percentage, seuil: s4Data.naivete.seuil, alerte: s4Data.naivete.alerte, comment: s4Data.naivete.commentaire, unit: '%', detail: s4Data.naivete.count + ' respondent(s) \u2014 ' + s4Data.naivete.percentage + '% (threshold: \u2264 ' + s4Data.naivete.seuil + '%)' },
+        { key: 'dissonance', label: 'Dissonance (V2)', val: s4Data.dissonance.percentage, seuil: s4Data.dissonance.seuil, alerte: s4Data.dissonance.alerte, comment: s4Data.dissonance.commentaire, unit: '%', detail: s4Data.dissonance.count + ' respondent(s) \u2014 ' + s4Data.dissonance.percentage + '% (threshold: \u2264 ' + s4Data.dissonance.seuil + '%)' },
+        { key: 'remise_en_question', label: 'Self-questioning', val: s4Data.remise.percentage, seuil: s4Data.remise.seuil, alerte: !s4Data.remise.atteint, comment: s4Data.remise.commentaire, unit: '%', detail: s4Data.remise.count_projet_pour_soi + ' / ' + s4Data.remise.count_avec_projet + ' project holders \u2014 ' + s4Data.remise.percentage + '% (threshold: \u2265 ' + s4Data.remise.seuil + '%)' },
+        { key: 'engagement_collectif', label: 'Collective engagement', val: s4Data.engagement.percentage, seuil: s4Data.engagement.seuil, alerte: !s4Data.engagement.atteint, comment: s4Data.engagement.commentaire, unit: '%', detail: s4Data.engagement.count_projet_pour_autres + ' / ' + s4Data.engagement.count_avec_projet + ' project holders \u2014 ' + s4Data.engagement.percentage + '% (threshold: \u2265 ' + s4Data.engagement.seuil + '%)' },
+        { key: 'pct_consultants', label: '% Consultants', val: s4Data.consultants.percentage, seuil: s4Data.consultants.seuil, alerte: !s4Data.consultants.atteint, comment: s4Data.consultants.commentaire, unit: '%', detail: s4Data.consultants.count + ' / ' + s4Data.consultants.count_avec_projet + ' project holders \u2014 ' + s4Data.consultants.percentage + '% (threshold: \u2264 ' + s4Data.consultants.seuil + '%)' },
+    ];
+
+    inds.forEach(ind => {
+        const cls = ind.alerte ? 'alert' : 'ok';
+        container.innerHTML += '<div class="card ' + cls + '"><span class="tt" data-tt-key="' + ind.key + '">i</span><div class="lbl">' + ind.label + '</div><div class="val">' + ind.val + ind.unit + '</div><div class="ind-detail">' + ind.detail + '</div><div class="comment">' + ind.comment + '</div></div>';
+    });
+}
+
+// ============================================================
+// VERBATIMS TOGGLE
+// ============================================================
+function toggleVerbatims() {
+    const grid = document.getElementById('verbatimGrid');
+    const toggle = document.getElementById('verbatimToggle');
+    if (grid.style.display === 'none') {
+        grid.style.display = 'block';
+        toggle.innerHTML = '\u25bc Hide raw verbatims';
+    } else {
+        grid.style.display = 'none';
+        toggle.innerHTML = '\u25b6 Show raw verbatims (17 verbatims)';
+    }
+}
+
+function drawVerbatims() {
+    const container = document.getElementById('verbatimList');
+    if (!verbatims || verbatims.length === 0) {
+        container.innerHTML = '<p style="color:#666">No verbatim collected.</p>';
+        return;
+    }
+    verbatims.forEach(v => {
+        container.innerHTML += '<div class="verbatim-item">' + v + '</div>';
+    });
+}
+
+// ============================================================
+// PORTFOLIO — Entonnoir X/Y/Z (Plotly Funnel)
+// ============================================================
+function drawPortfolio() {
+    const container = document.getElementById('portfolioSection');
+    if (!portfolio || !portfolio.distribution) {
+        container.innerHTML = '<div class="card warn"><div class="lbl">Strategic portfolio</div><div class="comment">X/Y/Z classification not available.</div></div>';
+        return;
+    }
+    const dist = portfolio.distribution;
+    const xCount = dist.X_relation_client ? dist.X_relation_client.count : 0;
+    const yCount = dist.Y_productivite ? dist.Y_productivite.count : 0;
+    const zCount = dist.Z_rd ? dist.Z_rd.count : 0;
+    const xPct = dist.X_relation_client ? dist.X_relation_client.percentage : 0;
+    const yPct = dist.Y_productivite ? dist.Y_productivite.percentage : 0;
+    const zPct = dist.Z_rd ? dist.Z_rd.percentage : 0;
+
+    const totalDedoubl = portfolio.nb_projets_dedoublonnes || (xCount + yCount + zCount);
+    const totalBruts = portfolio.nb_projets_bruts || totalDedoubl;
+    container.innerHTML = '<h3 style="margin:24px 0 12px;font-size:18px">Strategic portfolio X/Y/Z <span class="tt inline" data-tt-key="entonnoir_xyz">i</span></h3>' +
+        '<p style="font-size:12px;color:#888;margin:-8px 0 12px;font-style:italic">' + totalBruts + ' raw ideas \u2192 ' + totalDedoubl + ' unique projects after deduplication</p>' +
+        '<div class="plotly-chart-container" id="funnelPlotly"></div>';
+
+    if (portfolio.equilibre) {
+        container.innerHTML += '<p style="font-size:13px;color:#666;margin:12px 0">' + portfolio.equilibre + '</p>';
+    }
+    if (portfolio.commentaire_entonnoir) {
+        container.innerHTML += '<p style="font-size:13px;color:#666;margin:8px 0;font-style:italic">' + portfolio.commentaire_entonnoir + '</p>';
+    }
+
+    // Funnel chart
+    const funnelTrace = {
+        type: 'funnel',
+        y: ['X \u2014 Customer Relations (' + xCount + ')', 'Y \u2014 Productivity (' + yCount + ')', 'Z \u2014 R&D / Innovation (' + zCount + ')'],
+        x: [xCount, yCount, zCount],
+        textinfo: 'value+percent total',
+        textposition: 'inside',
+        marker: { color: ['#0d7377', '#c8a951', '#1A3A5A'] },
+        connector: { line: { color: '#ccc', width: 1 } }
+    };
+
+    const funnelLayout = {
+        margin: { t: 10, b: 20, l: 200, r: 40 },
+        font: { family: 'DM Sans, Arial, sans-serif', size: 13 },
+        height: 250,
+        showlegend: false
+    };
+
+    Plotly.newPlot('funnelPlotly', [funnelTrace], funnelLayout, { displayModeBar: false, responsive: true });
+}
+
+// ============================================================
+// LLM ANALYSIS — avec tags catégorie + filtre
+// ============================================================
+function drawLlmAnalysis() {
+    const container = document.getElementById('llmSection');
+    const filterBar = document.getElementById('llmFilterBar');
+    if (!analyseLlm) {
+        container.innerHTML = '<div class="card warn" style="margin:16px 0"><div class="lbl">Qualitative analysis</div><div class="comment">LLM analysis not available.</div></div>';
+        return;
+    }
+
+    // Check if blocs have categories
+    const hasCategories = analyseLlm.blocs_thematiques && analyseLlm.blocs_thematiques.some(b => b.categorie);
+
+    // Build filter buttons if categories exist
+    if (hasCategories) {
+        filterBar.innerHTML = '<div class="filter-buttons" id="blocFilterBtns">' +
+            '<button class="filter-btn active" data-filter="all" onclick="filterBlocs(\'all\')">All</button>' +
+            '<button class="filter-btn" data-filter="X_relation_client" onclick="filterBlocs(\'X_relation_client\')">Customer Relations</button>' +
+            '<button class="filter-btn" data-filter="Y_productivite" onclick="filterBlocs(\'Y_productivite\')">Productivity</button>' +
+            '<button class="filter-btn" data-filter="Z_rd" onclick="filterBlocs(\'Z_rd\')">R&D / Innovation</button>' +
+            '</div>';
+    }
+
+    const nbPistes = (analyseLlm.blocs_thematiques || []).length;
+    const pistesLabel = nbPistes > 0 ? ': ' + nbPistes + ' avenue' + (nbPistes > 1 ? 's' : '') + ' identified' : '';
+    let html = '<h3 style="margin:24px 0 12px;font-size:18px">Qualitative analysis of verbatims' + pistesLabel + '</h3>';
+
+    if (analyseLlm.blocs_thematiques) {
+        html += '<div class="blocs-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">';
+        analyseLlm.blocs_thematiques.forEach(function(b) {
+            const cat = b.categorie || '';
+            let tagHtml = '';
+            if (cat === 'X_relation_client') tagHtml = '<span class="cat-tag x">Customer Relations</span>';
+            else if (cat === 'Y_productivite') tagHtml = '<span class="cat-tag y">Productivity</span>';
+            else if (cat === 'Z_rd') tagHtml = '<span class="cat-tag z">R&D / Innovation</span>';
+
+            html += '<div class="bloc-theme" data-categorie="' + cat + '">' + tagHtml + '<h4>' + b.titre + '</h4>';
+            if (b.mot_cle_strategique) html += '<div class="keyword">' + b.mot_cle_strategique + '</div>';
+            if (b.besoins) html += '<ul>' + b.besoins.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ul>';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+
+    if (analyseLlm.problematiques_profondes) {
+        html += '<div class="insight-box"><h4>Underlying issues</h4>';
+        analyseLlm.problematiques_profondes.forEach(function(p) { html += '<p>\u2022 ' + p + '</p>'; });
+        html += '</div>';
+    }
+
+    if (analyseLlm.besoin_latent_global) {
+        html += '<div class="insight-box"><h4>Overall latent need</h4><p>' + analyseLlm.besoin_latent_global + '</p></div>';
+    }
+
+    if (analyseLlm.angle_mort) {
+        html += '<div class="insight-box" style="background:linear-gradient(135deg,#7c2d12,#9a3412)"><h4 style="color:#fbbf24">\u26A0\uFE0F Blind spot</h4><p>' + analyseLlm.angle_mort + '</p></div>';
+    }
+
+    if (analyseLlm.question_strategique) {
+        html += '<div class="orientation"><h3>\u2753 Strategic question for leadership</h3><p>' + analyseLlm.question_strategique + '</p></div>';
+    }
+
+    container.innerHTML = html;
+}
+
+function filterBlocs(cat) {
+    // Update active button
+    document.querySelectorAll('#blocFilterBtns .filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-filter') === cat);
+    });
+    // Filter blocs
+    document.querySelectorAll('.bloc-theme').forEach(bloc => {
+        if (cat === 'all' || bloc.getAttribute('data-categorie') === cat) {
+            bloc.style.display = 'block';
+        } else {
+            bloc.style.display = 'none';
+        }
+    });
+}
+
+// ============================================================
+// SECTION 6
+// ============================================================
+function drawAnalysis() {
+    const bnContainer = document.getElementById('bonnesNouvelles');
+    bonnesNouvelles.forEach(function(bn) {
+        bnContainer.innerHTML += '<div class="signal good"><strong>Signal ' + bn.rang + '</strong> \u2014 ' + bn.phrase + '</div>';
+    });
+
+    const dContainer = document.getElementById('defis');
+    if (defis.length === 0) {
+        dContainer.innerHTML = '<p style="color:#666;font-style:italic">No major challenge identified.</p>';
+    } else {
+        defis.forEach(function(d) {
+            dContainer.innerHTML += '<div class="signal ' + d.gravite + '"><strong>' + ({critique:'CRITICAL',serieux:'SERIOUS',attention:'WARNING'}[d.gravite] || d.gravite.toUpperCase()) + '</strong> \u2014 ' + d.phrase + '</div>';
+        });
+    }
+
+    const oContainer = document.getElementById('orientationBox');
+    oContainer.innerHTML = '<div class="orientation"><h3>\ud83e\udded Orientation</h3><p>' + orientation.phrase + '</p></div>';
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    drawDonut();
+    drawCapacityCards();
+    drawBars('barNiveau', aimParNiveau);
+    drawBars('barDept', aimParDept);
+    drawParticipants();
+    drawHeatmap();
+    drawRadar();
+    drawIndicators();
+    drawVerbatims();
+    drawPortfolio();
+    drawLlmAnalysis();
+    drawAnalysis();
+    initTooltips();
+});
+</script>
+</body>
+</html>
